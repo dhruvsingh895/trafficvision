@@ -44,8 +44,3 @@ services:
         value: http://trafficvision-api:8000
     healthCheckPath: /
     autoDeploy: true
-
-# Persistent disk for video storage
-disks:
-  - name: trafficvision-data
-    sizeGB: 10
