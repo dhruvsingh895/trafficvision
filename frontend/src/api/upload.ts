@@ -1,7 +1,7 @@
 import { ApiError, UploadResponse } from './types';
 
 const ALLOWED_EXTENSIONS = ['.mp4', '.avi', '.mov', '.mkv'];
-const API_BASE = import.meta.env.DEV ? '/api' : 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
 export function validateVideoFile(file: File): string | null {
   const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();

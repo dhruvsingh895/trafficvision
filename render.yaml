@@ -1,0 +1,51 @@
+services:
+  # Backend API service
+  - type: web
+    name: trafficvision-api
+    runtime: docker
+    dockerfilePath: ./trafficvision/backend/Dockerfile
+    dockerContext: ./trafficvision/backend
+    envVars:
+      - key: TV_MODEL_PATH
+        value: yolov8s.pt
+      - key: TV_IMGSZ
+        value: "640"
+      - key: TV_FRAME_STRIDE
+        value: "2"
+      - key: TV_CONF_MOTORCYCLE
+        value: "0.15"
+      - key: TV_CONF_BUS
+        value: "0.20"
+      - key: TV_CONF_TRUCK
+        value: "0.20"
+      - key: TV_DATABASE_URL
+        value: sqlite:////data/trafficvision.db
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: TV_CORS_ORIGINS
+        value: "https://trafficvision-frontend.onrender.com,http://localhost:5173"
+    disk:
+      name: trafficvision-data
+      mountPath: /data
+      sizeGB: 10
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+  # Frontend (served via nginx from Dockerfile)
+  - type: web
+    name: trafficvision-frontend
+    runtime: docker
+    dockerfilePath: ./trafficvision/frontend/Dockerfile
+    dockerContext: ./trafficvision/frontend
+    envVars:
+      - key: VITE_API_BASE
+        value: /api
+      - key: API_BASE
+        value: http://trafficvision-api:8000
+    healthCheckPath: /
+    autoDeploy: true
+
+# Persistent disk for video storage
+disks:
+  - name: trafficvision-data
+    sizeGB: 10

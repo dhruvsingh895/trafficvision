@@ -1,5 +1,6 @@
 """TrafficVision FastAPI application entry point."""
 import logging
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,9 +17,12 @@ def create_app() -> FastAPI:
     """Application factory."""
     app = FastAPI(title=settings.app_name, version="0.1.0")
 
+    # CORS origins from env (comma-separated) or default to local dev
+    cors_origins = os.getenv("TV_CORS_ORIGINS", "http://localhost:5173").split(",")
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173"],
+        allow_origins=cors_origins,
         allow_methods=["*"],
         allow_headers=["*"],
     )
