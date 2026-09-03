@@ -2,7 +2,6 @@
 import logging
 from dataclasses import dataclass
 
-import cv2
 import numpy as np
 
 from app.cv.detection import VEHICLE_CLASSES, Detection
@@ -112,7 +111,6 @@ class VehicleTracker:
         # Build ultralytics Results-like object for tracker
         import torch
         from ultralytics.engine.results import Results
-        from ultralytics.utils.ops import xyxy2xywh
 
         if not detections:
             return []
@@ -123,7 +121,6 @@ class VehicleTracker:
             dtype=torch.float32,
             device=self.device or "cpu",
         )
-        boxes_xywh = xyxy2xywh(boxes_xyxy)
         cls = torch.tensor([d.class_id for d in detections], dtype=torch.int32)
         conf = torch.tensor([d.confidence for d in detections], dtype=torch.float32)
 

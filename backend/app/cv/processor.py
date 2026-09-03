@@ -10,7 +10,7 @@ import cv2
 from app.cv.annotator import draw_line, draw_stats, draw_tracked_box
 from app.cv.counting import CountingLine, VehicleCounter
 from app.cv.model_loader import resolve_device, resolve_model
-from app.cv.motion_roi import MotionROI, MotionROIExtractor
+from app.cv.motion_roi import MotionROIExtractor
 from app.cv.statistics import StatsCollector, TrafficStats
 from app.cv.tracker import TrackedDetection, VehicleTracker
 

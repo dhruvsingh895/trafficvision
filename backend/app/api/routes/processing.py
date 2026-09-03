@@ -1,8 +1,6 @@
 """Processing, status, results, output and frame endpoints."""
-import asyncio
 import json
 import threading
-import time
 from queue import Queue
 
 import cv2
@@ -162,7 +160,7 @@ def _live_stream_generator(video_id: str, line_y_ratio: float) -> str:
                 on_live=on_live,
                 live_every=max(1, settings.frame_stride),  # match inference rate
             )
-        except Exception as exc:
+        except BaseException as exc:  # noqa: BLE001 - catch all worker errors
             error.append(str(exc))
             q.put(("error", {"detail": str(exc)}))
         finally:
@@ -177,7 +175,7 @@ def _live_stream_generator(video_id: str, line_y_ratio: float) -> str:
         try:
             event, payload = q.get(timeout=0.5)
             yield _sse_format(event, payload)
-        except Exception:
+        except Queue.empty:
             if done.is_set() and q.empty():
                 break
             yield ": keepalive\n\n"
