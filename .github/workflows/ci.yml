@@ -19,13 +19,13 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install -r trafficvision/backend/requirements.txt
+        run: pip install -r backend/requirements.txt
 
       - name: Run linter
-        run: ruff check trafficvision/backend/app trafficvision/backend/tests
+        run: ruff check backend/app backend/tests
 
       - name: Run tests
-        run: pytest -q trafficvision/backend/tests
+        run: pytest -q backend/tests
 
   frontend-build:
     runs-on: ubuntu-latest
@@ -37,23 +37,23 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: trafficvision/frontend/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
-        working-directory: trafficvision/frontend
+        working-directory: frontend
 
       - name: Type check
         run: npx tsc -b
-        working-directory: trafficvision/frontend
+        working-directory: frontend
 
       - name: Lint
         run: npm run lint
-        working-directory: trafficvision/frontend
+        working-directory: frontend
 
       - name: Build
         run: npm run build
-        working-directory: trafficvision/frontend
+        working-directory: frontend
 
   docker-build:
     runs-on: ubuntu-latest
@@ -63,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build backend image
-        run: docker build -t trafficvision-backend ./trafficvision/backend
+        run: docker build -t trafficvision-backend ./backend
 
       - name: Build frontend image
-        run: docker build -t trafficvision-frontend ./trafficvision/frontend
+        run: docker build -t trafficvision-frontend ./frontend
