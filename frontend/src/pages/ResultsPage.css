@@ -1,0 +1,25 @@
+.results-page { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 0.9rem;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+
+.player { width: 100%; max-width: 800px; border-radius: 8px; background: #000; }
+
+.player-meta {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 0.85rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}

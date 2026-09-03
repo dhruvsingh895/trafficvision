@@ -1,0 +1,38 @@
+.line-config { margin: 1.25rem 0; }
+.line-config .hint { color: var(--muted); font-size: 0.85rem; margin: 0 0 0.6rem; }
+
+.line-container {
+  position: relative;
+  max-width: 640px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: row-resize;
+  user-select: none;
+  background: var(--surface);
+}
+
+.line-container img { display: block; width: 100%; pointer-events: none; }
+
+.line-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #ff4d4d;
+  box-shadow: 0 0 6px rgba(255, 77, 77, 0.9);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.line-overlay::after {
+  content: 'COUNTING LINE';
+  position: absolute;
+  right: 6px;
+  top: -16px;
+  font-size: 10px;
+  color: #ff8080;
+}
+
+.frame-fallback { padding: 3rem; text-align: center; color: var(--muted); }
+.line-value { color: var(--muted); font-size: 0.85rem; margin: 0.5rem 0 0; }

@@ -1,0 +1,27 @@
+.process-page { max-width: 560px; }
+
+.video-id { color: var(--muted); font-size: 0.85rem; }
+
+.status-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.status-label { margin: 0; text-transform: capitalize; }
+.status-label.completed strong { color: #57c26b; }
+.status-label.failed strong { color: var(--danger); }
+.status-label.processing strong { color: var(--accent); }
+
+.spinner-text { margin: 0; color: var(--muted); font-size: 0.85rem; }
+
+.btn.secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn.secondary:hover { background: var(--border); }

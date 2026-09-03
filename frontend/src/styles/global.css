@@ -1,0 +1,52 @@
+:root {
+  --bg: #12151c;
+  --surface: #1a1f2b;
+  --surface-2: #212838;
+  --border: #2a3140;
+  --text: #e6eaf2;
+  --muted: #9aa4b5;
+  --accent: #4f8ef7;
+  --danger: #e05a5a;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+h2 { margin-top: 0; font-weight: 600; }
+h3 { margin: 0 0 0.75rem; font-weight: 600; font-size: 1rem; color: var(--muted); }
+
+.btn {
+  display: inline-block;
+  padding: 0.55rem 1.2rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.btn:hover { background: #2a3347; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover:not(:disabled) { background: #3b78e0; }
+.btn:disabled { opacity: 0.55; cursor: default; }
+
+.error-text { color: var(--danger); margin: 0.5rem 0 0; }
+.loading { color: var(--muted); padding: 2rem; text-align: center; }
+
+.progress-bar {
+  height: 10px;
+  background: var(--surface-2);
+  border-radius: 5px;
+  overflow: hidden;
+  flex: 1;
+}
+.progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
