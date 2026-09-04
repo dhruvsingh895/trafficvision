@@ -22,7 +22,7 @@ jobs:
         run: pip install -r backend/requirements.txt
 
       - name: Run linter
-        run: ruff check backend/app backend/tests
+        run: ruff check backend/app backend/tests --config backend/ruff.toml
 
       - name: Run tests
         run: pytest -q backend/tests
