@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { liveStream } from '../api/client';
-import { LiveFrameEvent } from '../api/types';
+import { Link, useParams } from 'react-router-dom';
+import { getVideoStatus, liveStream } from '../api/client';
+import { JobStatus, LiveFrameEvent } from '../api/types';
 import StatCard from '../components/StatCard';
 import './LivePage.css';
 
@@ -15,10 +15,36 @@ export default function LivePage() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   const lineRatioRef = useRef(0.5);
 
   useEffect(() => {
+    let active = true;
+    let timer: number | undefined;
+
+    const pollStatus = async () => {
+      try {
+        const status = await getVideoStatus(videoId);
+        if (!active) return;
+        setJobStatus(status.status);
+        setProgress(status.progress);
+        if (status.status === 'completed' || status.status === 'failed') {
+          setDone(true);
+          if (status.status === 'failed') {
+            setError(status.error ?? 'Processing failed.');
+          }
+          return;
+        }
+        timer = window.setTimeout(pollStatus, 2000);
+      } catch (err) {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : 'Failed to read processing status.');
+        timer = window.setTimeout(pollStatus, 3000);
+      }
+    };
+
+    pollStatus();
     const cleanup = liveStream(
       videoId,
       lineRatioRef.current,
@@ -30,16 +56,21 @@ export default function LivePage() {
         setProgress(evt.progress);
       },
       (err) => {
-        setError(err.message);
-        setDone(true);
+        // Live frames are optional; status polling continues if the stream drops.
+        if (err.message !== 'Connection lost') {
+          setError(err.message);
+        }
       },
       () => {
-        setDone(true);
-        setProgress(100);
+        // Final completion is determined by the persisted job status.
       },
     );
     cleanupRef.current = cleanup;
-    return () => cleanupRef.current?.();
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+      cleanupRef.current?.();
+    };
   }, [videoId]);
 
   return (
@@ -47,6 +78,9 @@ export default function LivePage() {
       <h2>Live Processing</h2>
       <p className="video-id">Video ID: {videoId}</p>
       {error && <p className="error-text">{error}</p>}
+      {jobStatus === 'completed' && (
+        <p>Processing completed. Live preview is optional.</p>
+      )}
 
       <div className="live-container">
         <div className="live-video">
@@ -74,10 +108,10 @@ export default function LivePage() {
         </div>
       </div>
 
-      {done && (
-        <a className="btn primary" href={`/results/${videoId}`}>
+      {done && jobStatus === 'completed' && (
+        <Link className="btn primary" to={`/results/${videoId}`}>
           View Final Results
-        </a>
+        </Link>
       )}
     </div>
   );
