@@ -172,3 +172,30 @@ git remote add origin https://github.com/YOUR_USERNAME/trafficvision.git
 git push -u origin main
 ```
 Then enable GitHub Actions in repo settings.
+
+### Vercel frontend deployment
+
+Deploy only the `frontend` directory to Vercel. The FastAPI/YOLO backend
+requires a persistent container, local/shared storage, and long-running video
+processing, so keep it deployed on Render or another container service.
+
+In Vercel:
+
+1. Import this GitHub repository.
+2. Set **Root Directory** to `frontend`.
+3. Use the default Vite build settings:
+   - Build command: `npm run build`
+   - Output directory: `dist`
+4. Add the environment variable
+   `VITE_API_BASE=https://<your-backend-domain>/api`.
+5. Redeploy after setting the variable.
+
+Add the resulting Vercel URL to the backend `TV_CORS_ORIGINS` value. For
+example:
+
+```text
+TV_CORS_ORIGINS=https://your-project.vercel.app
+```
+
+The frontend includes `frontend/vercel.json` so React Router routes work on
+direct navigation and page refresh.
