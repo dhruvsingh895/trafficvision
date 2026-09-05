@@ -59,7 +59,7 @@ def video_results(video_id: str) -> VideoResults:
     path = _video_or_404(video_id)
     try:
         fps = VideoInspectionService().inspect(path).fps
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - surface worker failures via SSE
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     results = get_results(video_id, fps)
     if results is None:
@@ -104,38 +104,36 @@ def _live_stream_generator(video_id: str, line_y_ratio: float) -> str:
     input_path = _video_or_404(video_id)
     output_path = settings.output_path / f"{video_id}.mp4"
 
-    info = VideoInspectionService().inspect(input_path)
-    line = default_line(info.width, info.height, line_y_ratio)
-
-    processor = VideoProcessor(
-        ProcessorConfig(
-            model_path=settings.model_path,
-            confidence=settings.confidence,
-            device=settings.device,
-            imgsz=settings.imgsz,
-            frame_stride=settings.frame_stride,
-            inference_backend=settings.inference_backend,
-            per_class_conf={
-                VEHICLE_CLASSES[2]: settings.conf_car,
-                VEHICLE_CLASSES[3]: settings.conf_motorcycle,
-                VEHICLE_CLASSES[5]: settings.conf_bus,
-                VEHICLE_CLASSES[7]: settings.conf_truck,
-            },
-            use_mog_roi=settings.use_mog_roi,
-            mog_history=settings.mog_history,
-            mog_var_threshold=settings.mog_var_threshold,
-            mog_detect_shadows=settings.mog_detect_shadows,
-            roi_padding=settings.roi_padding,
-            max_roi_area_ratio=settings.max_roi_area_ratio,
-        )
-    )
-
     q: Queue = Queue()
     done = threading.Event()
-    error: list[str] = []
 
     def worker():
         try:
+            info = VideoInspectionService().inspect(input_path)
+            line = default_line(info.width, info.height, line_y_ratio)
+            processor = VideoProcessor(
+                ProcessorConfig(
+                    model_path=settings.model_path,
+                    confidence=settings.confidence,
+                    device=settings.device,
+                    imgsz=settings.imgsz,
+                    frame_stride=settings.frame_stride,
+                    inference_backend=settings.inference_backend,
+                    per_class_conf={
+                        VEHICLE_CLASSES[2]: settings.conf_car,
+                        VEHICLE_CLASSES[3]: settings.conf_motorcycle,
+                        VEHICLE_CLASSES[5]: settings.conf_bus,
+                        VEHICLE_CLASSES[7]: settings.conf_truck,
+                    },
+                    use_mog_roi=settings.use_mog_roi,
+                    mog_history=settings.mog_history,
+                    mog_var_threshold=settings.mog_var_threshold,
+                    mog_detect_shadows=settings.mog_detect_shadows,
+                    roi_padding=settings.roi_padding,
+                    max_roi_area_ratio=settings.max_roi_area_ratio,
+                )
+            )
+
             def on_live(jpeg: bytes, stats, frame_num: int, total: int):
                 payload = {
                     "frame": frame_num,
@@ -160,8 +158,7 @@ def _live_stream_generator(video_id: str, line_y_ratio: float) -> str:
                 on_live=on_live,
                 live_every=max(1, settings.frame_stride),  # match inference rate
             )
-        except BaseException as exc:  # noqa: BLE001 - catch all worker errors
-            error.append(str(exc))
+        except Exception as exc:
             q.put(("error", {"detail": str(exc)}))
         finally:
             done.set()
@@ -193,5 +190,6 @@ def live_stream(video_id: str, line_y_ratio: float = 0.5):
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
         },
     )
