@@ -138,3 +138,24 @@ def test_reprocessing_replaces_results(
     assert status["error"] is None
     results = client.get(f"/api/videos/{video_id}/results").json()
     assert results["total"] == 4
+
+
+def test_rejects_duplicate_processing_while_first_job_is_active(
+    sample_video: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(ps, "VideoProcessor", FakeProcessor)
+    video_id = upload_video(sample_video)
+    original_run_job = ps._run_job
+
+    def blocked_run_job(*args):
+        time.sleep(0.2)
+        original_run_job(*args)
+
+    monkeypatch.setattr(ps, "_run_job", blocked_run_job)
+    first = client.post(f"/api/videos/{video_id}/process", json={})
+    assert first.status_code == 200
+
+    duplicate = client.post(f"/api/videos/{video_id}/process", json={})
+    assert duplicate.status_code == 409
+    assert duplicate.json()["detail"] == "Video is already being processed."
+    assert wait_completed(video_id)["status"] == "completed"

@@ -4,9 +4,12 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from app.core.config import get_settings
 from app.core.logging import setup_logging
+from app.db.session import get_session
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -37,6 +40,22 @@ def create_app() -> FastAPI:
     @app.get("/api/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/api/ready")
+    def readiness() -> JSONResponse:
+        """Report whether the database and required storage are available."""
+        try:
+            with get_session() as session:
+                session.execute(text("SELECT 1"))
+            settings.input_path
+            settings.output_path
+        except Exception as exc:
+            logger.warning("Readiness check failed: %s", exc)
+            return JSONResponse(
+                status_code=503,
+                content={"status": "not_ready"},
+            )
+        return JSONResponse(status_code=200, content={"status": "ready"})
 
     logger.info("Application created: %s", settings.app_name)
     return app

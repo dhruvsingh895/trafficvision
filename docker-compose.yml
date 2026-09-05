@@ -14,5 +14,7 @@ services:
     build: ./frontend
     ports:
       - "8080:80"
+    environment:
+      API_BASE: http://backend:8000
     depends_on:
       - backend

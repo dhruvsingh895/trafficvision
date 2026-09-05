@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    build: ./trafficvision/backend
+    build: ./backend
     environment:
       - TV_MODEL_PATH=yolov8s.pt
       - TV_IMGSZ=640
@@ -16,9 +16,11 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./trafficvision/frontend
+    build: ./frontend
     ports:
       - "8080:80"
+    environment:
+      API_BASE: http://backend:8000
     depends_on:
       - backend
     restart: unless-stopped

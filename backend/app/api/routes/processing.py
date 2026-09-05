@@ -1,7 +1,7 @@
 """Processing, status, results, output and frame endpoints."""
 import json
 import threading
-from queue import Queue
+from queue import Empty, Queue
 
 import cv2
 from fastapi import APIRouter, HTTPException
@@ -41,7 +41,7 @@ def start_processing(
     try:
         job_id = create_job(video_id, ratio)
     except ProcessingError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
     return ProcessResponse(job_id=job_id, video_id=video_id)
 
 
@@ -175,7 +175,7 @@ def _live_stream_generator(video_id: str, line_y_ratio: float) -> str:
         try:
             event, payload = q.get(timeout=0.5)
             yield _sse_format(event, payload)
-        except Queue.empty:
+        except Empty:
             if done.is_set() and q.empty():
                 break
             yield ": keepalive\n\n"

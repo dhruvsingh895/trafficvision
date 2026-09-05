@@ -90,8 +90,17 @@ export function liveStream(
     } catch { /* ignore */ }
   });
   es.addEventListener('error', (e) => {
-    const err = JSON.parse((e as MessageEvent).data || '{}');
-    onError?.(new Error(err.detail || 'Stream error'));
+    let message = 'Stream error';
+    const data = (e as MessageEvent).data;
+    if (typeof data === 'string' && data) {
+      try {
+        const parsed = JSON.parse(data) as { detail?: string };
+        if (parsed.detail) message = parsed.detail;
+      } catch {
+        message = data;
+      }
+    }
+    onError?.(new Error(message));
     es.close();
   });
   es.addEventListener('done', () => {

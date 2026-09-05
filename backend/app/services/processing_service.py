@@ -3,6 +3,7 @@ import json
 import logging
 import threading
 import uuid
+from collections import defaultdict
 
 from app.core.config import get_settings
 from app.cv.detection import VEHICLE_CLASSES
@@ -18,6 +19,12 @@ logger = logging.getLogger(__name__)
 class ProcessingError(Exception):
     """Raised when a processing job cannot be started."""
 
+    def __init__(self, message: str, status_code: int = 409) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
+
+_video_locks: defaultdict[str, threading.Lock] = defaultdict(threading.Lock)
 
 def create_job(video_id: str, line_y_ratio: float) -> str:
     """Create a job row and start a background thread."""
@@ -25,23 +32,44 @@ def create_job(video_id: str, line_y_ratio: float) -> str:
     storage = VideoStorageService(settings.input_path)
     input_path = storage.get_path(video_id)
     if input_path is None:
-        raise ProcessingError("Video not found.")
+        raise ProcessingError("Video not found.", status_code=404)
 
-    job_id = uuid.uuid4().hex[:12]
-    with get_session() as s:
-        s.add(
-            JobRecord(job_id=job_id, video_id=video_id, status="processing")
+    # The lock closes the check/create race for requests handled by this
+    # process; the database check also protects against already-running jobs.
+    with _video_locks[video_id]:
+        with get_session() as s:
+            active = (
+                s.query(JobRecord)
+                .filter(
+                    JobRecord.video_id == video_id,
+                    JobRecord.status.in_(("queued", "processing")),
+                )
+                .first()
+            )
+            if active is not None:
+                raise ProcessingError(
+                    "Video is already being processed.",
+                    status_code=409,
+                )
+
+            job_id = uuid.uuid4().hex[:12]
+            s.add(JobRecord(job_id=job_id, video_id=video_id, status="processing"))
+            video = s.get(VideoRecord, video_id)
+            if video:
+                video.status = "processing"
+
+        thread = threading.Thread(
+            target=_run_job,
+            args=(job_id, video_id, input_path, line_y_ratio),
+            daemon=True,
         )
-        video = s.get(VideoRecord, video_id)
-        if video:
-            video.status = "processing"
-
-    thread = threading.Thread(
-        target=_run_job,
-        args=(job_id, video_id, input_path, line_y_ratio),
-        daemon=True,
-    )
-    thread.start()
+        try:
+            thread.start()
+        except RuntimeError as exc:
+            _store_failure(job_id, video_id, str(exc))
+            raise ProcessingError(
+                "Unable to start processing job.", status_code=503
+            ) from exc
     logger.info("Started job %s for video %s", job_id, video_id)
     return job_id
 

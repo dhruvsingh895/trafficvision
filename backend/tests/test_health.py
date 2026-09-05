@@ -12,6 +12,12 @@ def test_health_returns_ok() -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_readiness_checks_dependencies() -> None:
+    response = client.get("/api/ready")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready"}
+
+
 def test_settings_defaults() -> None:
     from app.core.config import get_settings
 
